@@ -1,0 +1,3 @@
+select * from
+(select emp, sal, rownum from employee where rownum over partition by (sal order by desc)) as r
+where r=3;

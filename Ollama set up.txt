@@ -1,0 +1,99 @@
+That error simply means Ollama isn’t installed or not added to your system PATH—Windows can’t find the ollama command.
+Let’s fix it properly 👇
+
+✅ Step 1: Install Ollama (Windows)
+
+
+Go to 👉 https://ollama.com/download
+
+
+Download Windows installer (.exe)
+
+
+Run the installer
+
+
+Restart your system (important)
+
+
+
+✅ Step 2: Verify Installation
+Open PowerShell (new window) and run:
+ollama --version
+👉 If it shows a version → ✅ installed correctly
+👉 If still “not recognized” → go to Step 3
+
+🔧 Step 3: Fix PATH Issue (if command not found)
+Sometimes Windows doesn’t add Ollama to PATH automatically.
+Check if installed:
+Go to:
+C:\Users\<your-username>\AppData\Local\Programs\Ollama
+If you see ollama.exe → it’s installed
+
+Add to PATH manually:
+
+
+Search “Environment Variables” in Windows
+
+
+Open → Edit the system environment variables
+
+
+Click Environment Variables
+
+
+Under System Variables → find Path → Edit
+
+
+Add this:
+
+
+C:\Users\<your-username>\AppData\Local\Programs\Ollama
+
+
+Click OK → Restart terminal
+
+
+
+✅ Step 4: Pull Model
+Now run:
+ollama pull llama3
+
+✅ Step 5: Start Ollama (Important)
+Run:
+ollama run llama3
+👉 This starts the local model server
+👉 Keep it running
+
+🧪 Step 6: Test API
+Open browser:
+http://localhost:11434
+If it responds → ✅ working
+
+🚨 Common Issues
+❌ Still not recognized?
+Run full path:
+"C:\Users\<your-username>\AppData\Local\Programs\Ollama\ollama.exe" pull llama3
+
+❌ Port already in use
+Kill old process or restart system
+
+❌ Slow / not responding
+
+
+First run downloads model (~3–5GB)
+
+
+Needs decent RAM (8GB+ recommended)
+
+
+
+🔥 Quick Summary
+ProblemFixcommand not foundinstall Ollamastill not foundadd to PATHAPI not workingrun ollama run llama3
+
+🚀 If you want next
+I can:
+✅ Replace your simple embedding with better local embeddings (sentence-transformers)
+✅ Make your system more accurate than current Ollama version
+✅ Add GPU acceleration setup
+Just tell me 👍

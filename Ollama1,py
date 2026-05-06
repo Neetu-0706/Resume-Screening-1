@@ -1,0 +1,212 @@
+import streamlit as st
+import re
+import numpy as np
+import PyPDF2
+import json
+import requests
+
+# ---------------- CONFIG ----------------
+OLLAMA_URL = "http://localhost:11434/api/generate"
+MODEL = "llama3"
+
+st.set_page_config(layout="wide")
+st.title("📄 AI Resume Matcher (Ollama - Free Local LLM)")
+
+# ---------------- PDF READER ----------------
+def extract_text_from_pdf(file):
+    text = ""
+    pdf = PyPDF2.PdfReader(file)
+    for page in pdf.pages:
+        text += page.extract_text() or ""
+    return text.lower()
+
+# ---------------- CLEAN ----------------
+def clean_text(text):
+    text = re.sub(r'[^a-zA-Z0-9\s]', ' ', text)
+    return re.sub(r'\s+', ' ', text).strip().lower()
+
+# ---------------- SIMPLE EMBEDDING (LOCAL) ----------------
+def simple_embedding(text):
+    words = text.split()
+    vector = np.zeros(300)
+    for w in words:
+        idx = hash(w) % 300
+        vector[idx] += 1
+    return vector
+
+# ---------------- COSINE SIM ----------------
+def cosine_similarity(a, b):
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b) + 1e-9)
+
+# ---------------- OLLAMA CALL ----------------
+def call_ollama(prompt):
+    response = requests.post(
+        OLLAMA_URL,
+        json={
+            "model": MODEL,
+            "prompt": prompt,
+            "stream": False
+        }
+    )
+    return response.json()["response"]
+
+# ---------------- SKILL EXTRACTION ----------------
+def extract_skills_llm(text, label):
+    prompt = f"""
+    Extract skills, tools, technologies from this {label}.
+    Return ONLY JSON array.
+
+    Text:
+    {text}
+    """
+
+    response = call_ollama(prompt)
+
+    try:
+        skills = json.loads(response)
+    except:
+        skills = []
+
+    return list(set([s.lower() for s in skills]))
+
+# ---------------- SEMANTIC MATCH ----------------
+def semantic_match(jd_skills, resume_skills):
+    matched = []
+
+    for jd in jd_skills:
+        jd_vec = simple_embedding(jd)
+
+        best_sim = 0
+        best_skill = None
+
+        for rs in resume_skills:
+            rs_vec = simple_embedding(rs)
+            sim = cosine_similarity(jd_vec, rs_vec)
+
+            if sim > best_sim:
+                best_sim = sim
+                best_skill = rs
+
+        if best_sim > 0.6:
+            matched.append((jd, best_skill, round(best_sim, 2)))
+
+    return matched
+
+# ---------------- FULL TEXT SIM ----------------
+def full_text_similarity(jd, resume):
+    return cosine_similarity(simple_embedding(jd), simple_embedding(resume))
+
+# ---------------- EXPERIENCE MATCH ----------------
+def experience_match(jd, resume):
+    prompt = f"""
+    Compare experience requirement vs candidate.
+
+    JD: {jd}
+    Resume: {resume}
+
+    Return JSON:
+    {{
+      "score": 0-1,
+      "reason": ""
+    }}
+    """
+
+    response = call_ollama(prompt)
+
+    try:
+        data = json.loads(response)
+        return data["score"], data["reason"]
+    except:
+        return 0.5, "Could not determine"
+
+# ---------------- BIAS DETECTION ----------------
+def detect_bias_llm(jd):
+    prompt = f"""
+    Check if this job description has bias.
+
+    Return JSON:
+    {{
+      "bias_found": true/false,
+      "type": [],
+      "severity": "",
+      "explanation": ""
+    }}
+
+    JD:
+    {jd}
+    """
+
+    response = call_ollama(prompt)
+
+    try:
+        return json.loads(response)
+    except:
+        return {"bias_found": False, "type": [], "severity": "low", "explanation": "N/A"}
+
+# ---------------- UI ----------------
+jd_text = st.text_area("📌 Paste Job Description")
+resume_file = st.file_uploader("📤 Upload Resume (PDF)", type=["pdf"])
+
+if st.button("🔍 Analyze"):
+
+    if not jd_text or not resume_file:
+        st.warning("Please provide both inputs")
+        st.stop()
+
+    resume_text = extract_text_from_pdf(resume_file)
+
+    jd_clean = clean_text(jd_text)
+    resume_clean = clean_text(resume_text)
+
+    st.info("⏳ Processing with local LLM...")
+
+    # Skills
+    jd_skills = extract_skills_llm(jd_clean, "job description")
+    resume_skills = extract_skills_llm(resume_clean, "resume")
+
+    jd_skills = jd_skills[:30]
+    resume_skills = resume_skills[:50]
+
+    # Matching
+    matched = semantic_match(jd_skills, resume_skills)
+
+    skill_score = len(matched) / len(jd_skills) if jd_skills else 0
+    semantic_score = full_text_similarity(jd_clean, resume_clean)
+    exp_score, exp_reason = experience_match(jd_clean, resume_clean)
+
+    final_score = (
+        (skill_score * 0.5) +
+        (semantic_score * 0.3) +
+        (exp_score * 0.2)
+    ) * 100
+
+    bias = detect_bias_llm(jd_clean)
+
+    matched_jd = [m[0] for m in matched]
+    missing = list(set(jd_skills) - set(matched_jd))
+
+    explanation_prompt = f"""
+    Explain ATS result.
+
+    Score: {final_score}
+    Matched: {matched}
+    Missing: {missing}
+    Experience: {exp_reason}
+    Bias: {bias}
+    """
+
+    explanation = call_ollama(explanation_prompt)
+
+    # ---------------- OUTPUT ----------------
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.metric("Match Score", f"{round(final_score,2)}%")
+        st.write("✅ Matched Skills", matched)
+
+    with col2:
+        st.write("❌ Missing Skills", missing)
+        st.write("⚠️ Bias", bias)
+
+    st.subheader("🤖 Explanation")
+    st.write(explanation)

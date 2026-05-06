@@ -1,0 +1,45 @@
+API Key :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
+
+
+Job Summary
+
+We are looking for a detail-oriented Python SQL Developer to design, develop, and maintain data-driven applications. The ideal candidate should have strong experience in Python programming and SQL for handling large datasets, building APIs, and optimizing database queries.
+
+🛠️ Key Responsibilities
+Develop and maintain backend applications using Python
+Write efficient and optimized SQL queries for data retrieval and manipulation
+Design and manage relational databases (MySQL, PostgreSQL, Oracle)
+Build RESTful APIs using frameworks like Flask or FastAPI
+Perform data analysis, transformation, and validation
+Debug, troubleshoot, and improve application performance
+Collaborate with data engineers, analysts, and frontend teams
+Ensure data integrity, security, and scalability
+💻 Required Skills
+Programming:
+Strong knowledge of Python
+Good understanding of object-oriented programming
+Database:
+Advanced SQL (joins, indexing, query optimization)
+Experience with MySQL / PostgreSQL / Oracle
+Frameworks & Tools:
+Flask / FastAPI / Django
+Pandas, NumPy
+Git (version control)
+☁️ Good to Have
+Experience with ETL pipelines
+Knowledge of data warehousing concepts
+Exposure to cloud platforms (AWS / Azure / GCP)
+Basic understanding of Docker
+🎓 Qualifications
+Bachelor’s degree in Computer Science, IT, or related field
+1–4 years of experience in Python and SQL development
+📈 Preferred Qualifications
+Experience working with large datasets
+Familiarity with data visualization tools
+Understanding of APIs and microservices architecture
+⚠️ Note (For Your Project Testing)
+
+This JD is:
+
+✅ Skill-rich (good for match scoring)
+✅ Neutral (no bias terms)
